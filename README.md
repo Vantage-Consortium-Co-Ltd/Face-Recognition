@@ -14,7 +14,6 @@ date: 2026-09-25
 - **K-Nearest Neighbors (KNN)** — จำแนกภาพใบหน้าโดยหาภาพใน dataset ที่ "ใกล้ที่สุด" (k=1) แล้วใช้ label ของภาพนั้นเป็นคำตอบ ไม่มีขั้นตอนเทรนโมเดลจริง (Lazy Learning)
 - **Squared Euclidean Distance** — มาตรวัดระยะทางระหว่างเวกเตอร์ pixel สองภาพ ใช้ตัดสินว่าภาพไหน "ใกล้" ที่สุด
 - **Flatten** — แปลงภาพ grayscale 2 มิติ (สูง×กว้าง) ให้เป็นเวกเตอร์ 1 มิติ ก่อนนำไปคำนวณระยะทาง
-- **Haar Cascade** — ตัวตรวจจับใบหน้าแบบคลาสสิกของ OpenCV ใช้เช็คว่า "มีหน้าจริงอยู่ในกรอบไหม" ก่อนค่อยส่งเข้า KNN ทำนายชื่อ
 - **Instance-based Learning** — กลุ่มอัลกอริทึมที่ไม่มีขั้นตอน "เทรน" แยกจาก "ทำนาย" เหมือนโมเดลอื่น ๆ (เช่น Neural Network) แต่ใช้ข้อมูลตัวอย่างทั้งหมดตอนทำนายโดยตรง
 
 ## <span class="material-symbols-outlined">menu_book</span> Theory (เข้าใจง่าย)
@@ -34,8 +33,7 @@ date: 2026-09-25
 
 จากนั้นเปิดกล้องแบบเดียวกับ `FaceTrain.py` แต่ในแต่ละเฟรม:
 1. Crop พื้นที่ในกรอบเดิม (350×450) แปลงเป็น grayscale
-2. ส่งเข้า **Haar Cascade** (`haarcascade_frontalface_default.xml`) เพื่อเช็คว่ามีใบหน้าจริงอยู่ในกรอบหรือไม่ — ถ้าไม่มี ไม่แสดงชื่อใด ๆ
-3. ถ้าพบใบหน้า ให้ flatten ภาพแล้วส่งเข้าฟังก์ชัน `knn()` เพื่อหาภาพใน dataset ที่ระยะทาง (squared Euclidean) น้อยที่สุด แล้วแสดงชื่อ label นั้นกำกับไว้เหนือกรอบ
+2. Flatten ภาพแล้วส่งเข้าฟังก์ชัน `knn()` เพื่อหาภาพใน dataset ที่ระยะทาง (squared Euclidean) น้อยที่สุด แล้วแสดงชื่อ label นั้นกำกับไว้เหนือกรอบ**ทุกเฟรมเสมอ** (ไม่มีการเช็คว่ามีใบหน้าจริงอยู่ในกรอบหรือไม่ — เป็น pure KNN classification ล้วน ๆ ตามโจทย์)
 
 ```python
 def knn(X, y, z, k=1):
@@ -54,7 +52,8 @@ def knn(X, y, z, k=1):
 | Feature | Raw pixel (ไม่ลดมิติด้วย PCA) | โจทย์เน้นสาธิต KNN ล้วน ๆ dataset เล็กพอที่ raw pixel ยังรันไหว |
 | Preprocessing | ไม่มี normalization/histogram equalization | ลดความซับซ้อน ยังไม่จำเป็นสำหรับ scope นี้ |
 | คนแปลกหน้า (Unknown) | ไม่มี threshold ระยะทาง — ทายเป็นคนใกล้สุดในฐานเสมอ | โจทย์เน้นแค่จำแนกระหว่างคนที่เทรนไว้ |
-| พื้นที่ที่ใช้ทำนาย | กรอบตายตัว (Haar cascade เช็คแค่ presence) | ตรงกับวิธีเก็บ dataset ไม่ต้องเก็บภาพใหม่ถ้าจะปรับพื้นที่ตรวจจับ |
+| การตรวจจับใบหน้า (Face detection) | ไม่มี — ทำนายจากพื้นที่ในกรอบตายตัวทุกเฟรมเสมอ (เอา Haar Cascade ออกแล้ว) | โจทย์คือ "ใช้ KNN classification" ล้วน ๆ ไม่ต้องมีตัวตรวจจับหน้าแยก |
+| พื้นที่ที่ใช้ทำนาย | กรอบตายตัว | ตรงกับวิธีเก็บ dataset |
 
 > [!important] ข้อจำกัดที่ควรรู้
 > เพราะไม่มี threshold ระยะทาง ถ้าเอาหน้าคนที่ไม่เคยเทรนเข้ากรอบ ระบบจะยังทายว่าเป็นคนที่ใกล้เคียงที่สุดในฐานเสมอ (ไม่มีทาง "Unknown") — เป็นข้อจำกัดโดยตั้งใจของ scope แล็บนี้ ไม่ใช่บั๊ก
@@ -69,7 +68,7 @@ python FaceTrain.py
 python FaceReg.py
 ```
 
-**Dependency สำคัญ:** ต้องใช้ `opencv-python` เวอร์ชันที่มี `cv2.CascadeClassifier` (เช่น `4.10.0.84`) เวอร์ชัน `5.0.0.x` ที่เพิ่งออกไม่ได้ build โมดูล `objdetect` มาด้วย ทำให้ `CascadeClassifier` ใช้ไม่ได้
+**หมายเหตุ dependency:** โปรเจกต์นี้ pin `opencv-python==4.10.0.84` ไว้ (ไม่ใช้เวอร์ชัน `5.0.0.x` ที่เพิ่งออก) เพราะเวอร์ชัน `5.0.0.x` ไม่ได้ build โมดูล `objdetect` มาด้วย ทำให้ `cv2.CascadeClassifier` ใช้ไม่ได้ — ตอนนี้โค้ดไม่ได้เรียกใช้ `CascadeClassifier` แล้ว แต่คงเวอร์ชันนี้ไว้เผื่ออนาคตอยากกลับมาใช้ Haar Cascade อีก
 
 ## <span class="material-symbols-outlined">schema</span> Diagram
 
@@ -79,10 +78,8 @@ flowchart TD
     Capture --> Save(["บันทึกเป็น &lt;name&gt;/&lt;i&gt;.jpg <br> (Save to per-person folder)"])
     Save --> Load(["FaceReg.py: โหลดทุกโฟลเดอร์ → flatten เป็น X, y <br> (Load dataset as feature matrix)"])
     Load --> Frame(["อ่านเฟรมจากกล้อง → crop กรอบเดิม → grayscale <br> (Read frame, crop same box)"])
-    Frame --> Detect{"Haar Cascade เจอหน้าในกรอบไหม? <br> (Face detected in box?)"}
-    Detect -->|"ไม่เจอ (No)"| Frame
-    Detect -->|"เจอ (Yes)"| KNN(["flatten ภาพ → knn(X, y, z) หาเพื่อนบ้านใกล้สุด <br> (Run KNN prediction)"])
-    KNN --> Show(["แสดงชื่อ label เหนือกรอบด้วย cv2.putText <br> (Overlay predicted name)"])
+    Frame --> KNN(["flatten ภาพ → knn(X, y, z) หาเพื่อนบ้านใกล้สุด <br> (Run KNN prediction)"])
+    KNN --> Show(["แสดงชื่อ label เหนือกรอบด้วย cv2.putText ทุกเฟรม <br> (Overlay predicted name every frame)"])
     Show --> Frame
 ```
 
