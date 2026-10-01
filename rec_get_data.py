@@ -1,10 +1,10 @@
 import cv2
 import os
-from Knn import FACE_BOX
 
+FACE_BOX = (200, 60, 440, 360)  # (x1, y1, x2, y2) capture box shared by rec_get_data.py and rec_test.py
 def capture_face():
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-    name = 'Mew'
+    name = 'person_name'  # change to the label of the person being captured
     i = 1
     os.makedirs(name, exist_ok=True)
 
