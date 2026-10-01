@@ -3,3 +3,7 @@ Meak/
 Arm/
 Mew/
 __pycache__
+*.jpg
+*.jpeg
+*.png
+*.npz
