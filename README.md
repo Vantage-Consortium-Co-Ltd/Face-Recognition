@@ -1,62 +1,76 @@
-# Face-Recognition
+# Face Recognition (KNN)
 
-Real-time face recognition from a webcam using a K-Nearest Neighbors (KNN) classifier written with only NumPy and OpenCV. Each face is a grayscale image flattened into a vector of raw pixels.
+จดจำหน้าจากกล้องแบบ real-time ด้วย K-Nearest Neighbors ที่เขียนเองด้วย NumPy + OpenCV
+แต่ละหน้าเป็นภาพขาวดำ 140x180 px ที่ถูก flatten เป็นเวกเตอร์ 25,200 ค่า
 
-## Files
+## ไฟล์
 
-| File | Purpose |
-|------|---------|
-| `Knn.py` | `knn(X, y, z, k)` classifier and `Create_Data()` dataset loader |
-| `rec_get_data.py` | Captures face images from the webcam and defines the shared `FACE_BOX` crop region |
-| `rec_test.py` | Loads the dataset and recognizes faces live from the webcam |
+| ไฟล์ | หน้าที่ |
+|---|---|
+| `config.py` | โฟลเดอร์ข้อมูล, กรอบตัดหน้า, ค่า K (ใช้ร่วมกันทุกไฟล์) |
+| `knn.py` | `knn()` ตัวจำแนก และ `load_faces()` อ่านรูปทั้งหมด |
+| `collect.py` | เก็บรูปหน้าจากกล้อง |
+| `recognize.py` | จดจำหน้าจากกล้องแบบ real-time |
+| `evaluate.py` | วัดความแม่นจากรูปที่เก็บไว้ (แบ่ง train/test) และเทียบหลายค่า k |
 
-## How it works
-
-1. **Collect data** – `rec_get_data.py` crops the region `FACE_BOX = (x1, y1, x2, y2)` (240x300 px), converts it to grayscale, and saves a `.jpg` each time you press `s`.
-2. **Load data** – `Create_Data()` reads every `.jpg` in each sub-folder of the working directory. The folder name becomes the label. It returns `X` (one flattened image per row, e.g. `(N, 72000)`) and `y` (a NumPy array of labels).
-3. **Predict** – `knn()` computes the squared Euclidean distance from the live face to every stored image, takes the `k` nearest, and returns the majority label.
-
-KNN has no real training step: the "model" is the stored dataset, and all the work happens at prediction time.
-
-## Usage
+## วิธีใช้
 
 ```bash
-pip install numpy opencv-python
+pip install -r requirements.txt
 ```
 
-**1. Capture images** – set `name` in `rec_get_data.py` to the label of the person, then run:
+**1. เก็บรูป**: ทำทีละคน รูปจะถูกเก็บที่ `dataset/<ชื่อ>/1.jpg, 2.jpg, ...`
 
 ```bash
-python rec_get_data.py
+python collect.py mek
+python collect.py mew
 ```
 
-Align the face inside the rectangle and press `s` to save an image. Repeat for each person, changing `name` each time. Images are saved to `./<name>/face<i>.jpg`.
+จัดหน้าให้อยู่ในกรอบแดง แล้วกด `s` เพื่อบันทึก ถ้ารันซ้ำ เลขรูปจะนับต่อจากเดิม ไม่บันทึกทับ กด `q` เพื่อออก
 
-> Re-running restarts the counter at 1 and overwrites existing `face<i>.jpg` files. Use a new `name` or move old images first.
-
-**2. Recognize** – run from the folder that contains the label sub-folders:
+**2. วัดความแม่น** (ไม่ต้องเปิดกล้อง)
 
 ```bash
-python rec_test.py
+python evaluate.py
 ```
 
-The predicted label is drawn above the box. Press `q` to quit.
+**3. จดจำหน้า real-time**: ชื่อที่ทายได้จะแสดงเหนือกรอบ กด `q` เพื่อออก
 
-## Choosing K
+```bash
+python recognize.py
+```
 
-`rec_test.py` calls `knn(..., k=...)`.
+## หลักการ
 
-- **Small K (1-3)** – sensitive to blurry or mislabeled images; the output may flicker between names.
-- **Large K** – smoother but can underfit. If K exceeds the number of images of a person, that person can never win the vote.
-- Use an **odd K** to avoid ties, and keep it below the smallest number of images per person.
-- Speed barely changes with K, because distances to all images are always computed.
+1. **เก็บข้อมูล**: ตัดเฉพาะส่วนในกรอบ แปลงเป็นขาวดำ แล้วบันทึกเป็น `.jpg`
+2. **โหลด**: ชื่อโฟลเดอร์คือ label ส่วนรูปทุกใบจะถูก flatten เป็น 1 แถวของ `X`
+3. **ทำนาย**: หาระยะ square euclidean จากหน้าปัจจุบันไปยังทุกรูป เลือก `k` รูปที่ใกล้ที่สุด แล้วโหวตชื่อที่ได้เสียงมากสุด
 
-## Limitations
+KNN ไม่มีขั้นตอนเทรนจริง "โมเดล" ก็คือรูปทั้งหมดที่เก็บไว้ งานคำนวณทั้งหมดเกิดตอนทำนาย
 
-- Raw pixels are sensitive to lighting, pose, and face position.
-- There is no "unknown person" handling: every face is assigned to one of the known labels.
-- No train/test split or accuracy measurement yet.
+## ผลทดสอบ
 
-## Privacy
+ทดสอบกับรูป 2 คน (mek 23 รูป, mew 167 รูป) แบ่ง test ไว้ 20% ของแต่ละคน:
 
-Face images are personal data and are **not** committed to this repository. Dataset folders and `.jpg` files are listed in `.gitignore`. Keep your own images locally and do not push them.
+| k | 1 | 3 | 5 | 7 | 9 |
+|---|---|---|---|---|---|
+| accuracy | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+ได้ 100% เพราะรูปของแต่ละคนถ่ายต่อเนื่องในรอบเดียว แสงและท่าเลยแทบเหมือนกัน รูปใน test จึงมีรูปที่เกือบซ้ำอยู่ใน train
+ถ้าเปลี่ยนสถานที่ แสง หรือมุมหน้า ความแม่นจะลดลง
+
+## การเลือก K
+
+- ใช้ **K เป็นเลขคี่** เพื่อไม่ให้โหวตเสมอ (กรณี 2 คน)
+- **K น้อย (1–3)**: ไวต่อรูปเบลอหรือรูปที่ติด label ผิด ชื่อที่แสดงอาจกระพริบไปมา
+- **K มาก**: ผลนิ่งขึ้น แต่ถ้า K มากกว่าจำนวนรูปของคนที่มีรูปน้อยสุด คนนั้นจะชนะโหวตยาก
+  เช่น mek มี 23 รูปแต่ mew มี 167 รูป จึงควรเก็บรูปแต่ละคนให้ใกล้เคียงกัน
+
+## ข้อจำกัด
+
+- ใช้ค่า pixel ตรง ๆ จึงไวต่อแสง ท่าทาง และตำแหน่งหน้าในกรอบ
+- ไม่มีคลาส "ไม่รู้จัก" ทุกหน้าจะถูกทายเป็นคนใดคนหนึ่งในข้อมูลเสมอ
+
+## ความเป็นส่วนตัว
+
+รูปหน้าเป็นข้อมูลส่วนบุคคล โฟลเดอร์ `dataset/` และไฟล์รูปทั้งหมดถูกกันไว้ใน `.gitignore` จึงไม่ถูก push ขึ้น GitHub

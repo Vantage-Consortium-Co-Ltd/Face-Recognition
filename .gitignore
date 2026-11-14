@@ -1,9 +1,7 @@
-Jack/
-Meak/
-Arm/
-Mew/
-__pycache__
+# รูปหน้าเป็นข้อมูลส่วนบุคคล ห้าม push
+dataset/
 *.jpg
 *.jpeg
 *.png
-*.npz
+__pycache__/
+*.pyc
