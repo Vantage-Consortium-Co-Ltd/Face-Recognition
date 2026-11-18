@@ -6,6 +6,7 @@ import sys
 import cv2
 
 from config import DATA_DIR, TOP, BOTTOM, LEFT, RIGHT
+from knn import imwrite
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 if len(sys.argv) < 2:
@@ -32,7 +33,7 @@ while True:
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord('s'):          # กด s = บันทึกภาพ
-        cv2.imwrite(os.path.join(folder, f'{i}.jpg'), face)
+        imwrite(os.path.join(folder, f'{i}.jpg'), face)
         print('saved', i)
         i += 1
     elif key == ord('q'):        # กด q = ออก

@@ -22,17 +22,22 @@ def split_per_person(y, ratio, seed=0):
     return ~test, test
 
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-X, y = load_faces(sys.argv[1] if len(sys.argv) > 1 else DATA_DIR)
-if len(np.unique(y)) < 2:
-    raise SystemExit('ต้องมีรูปอย่างน้อย 2 คน')
-names, counts = np.unique(y, return_counts=True)
-print('ข้อมูล:', dict(zip(names.tolist(), counts.tolist())))
+def main():
+    X, y = load_faces(sys.argv[1] if len(sys.argv) > 1 else DATA_DIR)
+    if len(np.unique(y)) < 2:
+        raise SystemExit('ต้องมีรูปอย่างน้อย 2 คน')
+    names, counts = np.unique(y, return_counts=True)
+    print('ข้อมูล:', dict(zip(names.tolist(), counts.tolist())))
 
-tr, te = split_per_person(y, TEST_RATIO)
-print(f'train={tr.sum()} test={te.sum()}\n')
-print(f'{"k":>3} {"accuracy":>9}   ' + '  '.join(f'{n}' for n in names))
-for k in KS:
-    pred = np.array([knn(X[tr], y[tr], z, k) for z in X[te]])
-    per_person = [np.mean(pred[y[te] == n] == n) for n in names]   # recall ของแต่ละคน
-    print(f'{k:>3} {np.mean(pred == y[te]):>9.3f}   ' + '  '.join(f'{p:.2f}' for p in per_person))
+    tr, te = split_per_person(y, TEST_RATIO)
+    print(f'train={tr.sum()} test={te.sum()}\n')
+    print(f'{"k":>3} {"accuracy":>9}   ' + '  '.join(f'{n}' for n in names))
+    for k in KS:
+        pred = np.array([knn(X[tr], y[tr], z, k) for z in X[te]])
+        per_person = [np.mean(pred[y[te] == n] == n) for n in names]   # recall ของแต่ละคน
+        print(f'{k:>3} {np.mean(pred == y[te]):>9.3f}   ' + '  '.join(f'{p:.2f}' for p in per_person))
+
+
+if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    main()
